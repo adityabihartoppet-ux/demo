@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ideathon Demo Form</title>
+  <style>
+  #email{
+    position: absolute; left: -9999px;
+  }
+  #phone{
+    position: absolute; left: -9999px;
+  }
+  #address{
+    position: absolute; left: -9999px;
+  }
+  </style>
+</head>
+<body>
+
+    <!-- सामान्य HTML फॉर्म (इसे आप अपने अनुसार CSS से कस्टमाइज़ कर सकते हैं) -->
+    <form id="demoForm">
+        <label>Name:</label>
+        <input type="text" id="name" name="name" autocomplete="name" required><br><br>
+
+        <label></label>
+        <input type="email" id="email" name="email" autocomplete="email"><br><br>
+
+        <label></label>
+        <input type="tel" id="phone" name="phone" autocomplete="tel"><br><br>
+
+        <label></label>
+        <input type="text" id="address" name="address" autocomplete="street-address"><br><br>
+
+        <button type="submit">Submit Data</button>
+    </form>
+
+    <!-- Firebase SDK (Version 10 Modular Setup) -->
+    <script type="module">
+        // Firebase के आवश्यक मॉड्यूल्स इम्पोर्ट करें
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // अपना Firebase Config यहाँ पेस्ट करें (जो आपने स्टेप 4 में कॉपी किया था)
+        const firebaseConfig = {
+          apiKey: "AIzaSyC-73epZZPNsIenSP7jTnToHpJRSzZpPPc",
+          authDomain: "autofilldem.firebaseapp.com",
+          projectId: "autofilldem",
+          storageBucket: "autofilldem.firebasestorage.app",
+          messagingSenderId: "326095186258",           appId: "1:326095186258:web:39c455e06cf099c854b28b",
+          measurementId: "G-TF739GJS30"
+        };
+
+        // Firebase इनिशियलाइज़ करें
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // फॉर्म सबमिशन को हैंडल करें
+        document.getElementById('demoForm').addEventListener('submit', async (e) => {
+            e.preventDefault(); // पेज को रीफ्रेश होने से रोकें
+
+            // इनपुट फील्ड्स से डेटा निकालें
+            const userName = document.getElementById('name').value;
+            const userEmail = document.getElementById('email').value;
+            const userPhone = document.getElementById('phone').value;
+            const userAddress = document.getElementById('address').value;
+
+            try {
+                // Firestore के 'autofill_demo_data' कलेक्शन में डेटा सेव करें
+                const docRef = await addDoc(collection(db, "autofill_demo_data"), {
+                    name: userName,
+                    email: userEmail,
+                    phone: userPhone,
+                    address: userAddress,
+                    timestamp: new Date()
+                });
+                console.log("Document written with ID: ", docRef.id);
+                alert("डेटा सफलतापूर्वक Firebase पर भेज दिया गया है!");
+                
+                // फॉर्म को रिसेट करें
+                document.getElementById('demoForm').reset();
+            } catch (error) {
+                console.error("Error adding document: ", error);
+                alert("डेटा भेजने में कोई त्रुटि हुई। कंसोल चेक करें।");
+            }
+        });
+    </script>
+
+</body>
+</html>
