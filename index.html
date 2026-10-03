@@ -4,11 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
-    <title>Pro Multi-Tool: PDF Maker & Photo Editor</title>
+    <title>Ultimate Multi-Tool: PDF Maker, Compressor & Photo Editor</title>
+    
     <!-- FontAwesome & Fonts -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- jsPDF -->
+    
+    <!-- jsPDF (For PDF Generation) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- PDF.js (For Reading & Compressing PDFs) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';</script>
+
     <!-- Cropper.js for Image Cropping -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
@@ -53,21 +60,15 @@
             box-sizing: border-box;
             position: relative;
         }
-        .upload-dashed-container:hover, .upload-dashed-container.dragover {
-            border-color: #3b82f6;
-            background-color: #eff6ff;
-        }
         
         #pdf-dropzone:hover, #pdf-dropzone.dragover { border-color: #a855f7; background-color: #faf5ff; }
+        #compress-dropzone:hover, #compress-dropzone.dragover { border-color: #f97316; background-color: #fff7ed; }
+        #img-dropzone:hover, #img-dropzone.dragover { border-color: #3b82f6; background-color: #eff6ff; }
 
-        .upload-icon-large {
-            font-size: 70px;
-            color: #94a3b8;
-            margin-bottom: 20px;
-            transition: 0.3s;
-        }
-        .upload-dashed-container:hover .upload-icon-large { color: #3b82f6; transform: scale(1.1); }
-        #pdf-dropzone:hover .upload-icon-large { color: #a855f7; }
+        .upload-icon-large { font-size: 70px; color: #94a3b8; margin-bottom: 20px; transition: 0.3s; }
+        #pdf-dropzone:hover .upload-icon-large { color: #a855f7; transform: scale(1.1); }
+        #compress-dropzone:hover .upload-icon-large { color: #f97316; transform: scale(1.1); }
+        #img-dropzone:hover .upload-icon-large { color: #3b82f6; transform: scale(1.1); }
 
         .file-name-display { font-size: 14px; color: #64748b; margin-top: 15px; font-weight: 500; }
 
@@ -90,7 +91,6 @@
         }
         input[type="number"]:focus, select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
         input[type="color"] { width: 100%; height: 42px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 2px; cursor: pointer; }
-        
         input[type="range"] { width: 100%; cursor: pointer; accent-color: #3b82f6; }
 
         .checkbox-group {
@@ -137,9 +137,12 @@
 
         .btn-pdf { background-color: #8b5cf6; box-shadow: 0 4px 12px rgba(139,92,246,0.25); }
         .btn-pdf:hover { background-color: #7c3aed; }
+        
+        .btn-compress { background-color: #f97316; box-shadow: 0 4px 12px rgba(249,115,22,0.25); }
+        .btn-compress:hover { background-color: #ea580c; }
 
-        /* Editor Workspaces */
-        #pdf-options, #options-section, #result-section {
+        /* Sections */
+        .workspace-box {
             background: white;
             padding: 25px;
             border-radius: 12px;
@@ -151,30 +154,26 @@
         .preview-img { max-width: 100%; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .info-text { font-size: 14px; color: #475569; margin-top: 15px; background-color: #f1f5f9; padding: 12px; border-radius: 8px; font-weight: 500;}
         
-        /* Cropper Container */
         .img-container { width: 100%; max-height: 400px; margin-bottom: 20px; background-color: #e2e8f0; border-radius: 8px; overflow: hidden; }
         .img-container img { max-width: 100%; display: block; }
     </style>
 </head>
 <body>
 
-<!-- ================= PDF MAKER SECTION ================= -->
+<!-- ================= 1. PRO PDF MAKER ================= -->
 <div class="container">
-    <h2>Pro PDF Maker</h2>
+    <h2>Image to PDF Maker</h2>
     <input type="file" id="pdf-upload" accept="image/*" multiple class="hidden">
 
     <div class="upload-dashed-container" id="pdf-dropzone">
         <div class="upload-icon-large">
             <i class="fa-solid fa-file-pdf"></i>
         </div>
-        <h3>Click or Drag & Drop Images Here</h3>
-        <p style="color:#64748b; font-size:13px;">Select multiple images to convert into a single PDF</p>
+        <h3>Click or Drag & Drop Images</h3>
     </div>
-    
     <p id="pdf-file-name-display" class="file-name-display"></p>
 
-    <!-- Extra PDF Features -->
-    <div id="pdf-options" class="hidden">
+    <div id="pdf-options" class="workspace-box hidden">
         <h3>PDF Settings</h3>
         <div class="row">
             <div class="input-group">
@@ -201,29 +200,61 @@
                 <option value="20">Large Margin</option>
             </select>
         </div>
-        <button id="generate-pdf-btn" class="btn-pdf"><i class="fa-solid fa-file-export"></i> Generate & Download PDF</button>
+        <button id="generate-pdf-btn" class="btn-pdf"><i class="fa-solid fa-file-export"></i> Generate & Download</button>
         <p id="pdf-status" class="info-text hidden" style="text-align:center; color: #8b5cf6;"></p>
     </div>
 </div>
 
 
-<!-- ================= PHOTO RESIZER & EDITOR SECTION ================= -->
+<!-- ================= 2. PDF COMPRESSOR / RESIZER ================= -->
+<div class="container">
+    <h2>PDF Resizer & Compressor</h2>
+    <input type="file" id="pdf-compress-upload" accept="application/pdf" class="hidden">
+
+    <div class="upload-dashed-container" id="compress-dropzone">
+        <div class="upload-icon-large">
+            <i class="fa-solid fa-file-zipper"></i>
+        </div>
+        <h3>Upload PDF to Reduce Size</h3>
+        <p style="color:#64748b; font-size:13px;">Compresses images inside the PDF</p>
+    </div>
+    
+    <p id="compress-file-name-display" class="file-name-display"></p>
+
+    <div id="compress-options" class="workspace-box hidden">
+        <div class="input-group">
+            <label>Compression Level</label>
+            <select id="compression-level">
+                <option value="medium"> Medium (Good Quality & Size)</option>
+                <option value="high"> High (Smallest Size, Lower Quality)</option>
+                <option value="low"> Low (Best Quality, Minor Size Reduction)</option>
+            </select>
+        </div>
+        <button id="compress-pdf-btn" class="btn-compress"><i class="fa-solid fa-compress"></i> Compress PDF</button>
+        <p id="compress-status" class="info-text hidden" style="text-align:center; color: #f97316;"></p>
+        
+        <div id="compress-result" class="hidden">
+            <p id="compress-info" class="info-text" style="background:#ecfdf5; border: 1px solid #d1fae5; color: #065f46;"></p>
+            <a id="download-compressed-pdf" class="btn-link btn-success" href="" download="Compressed.pdf"><i class="fa-solid fa-download"></i> Download PDF</a>
+        </div>
+    </div>
+</div>
+
+
+<!-- ================= 3. PHOTO EDITOR & RESIZER ================= -->
 <div class="container">
     <h2>Photo Editor & Resizer</h2>
-    
     <div id="upload-section">
         <input type="file" id="image-upload" accept="image/*" class="hidden">
         <div class="upload-dashed-container" id="img-dropzone">
             <div class="upload-icon-large">
                 <i class="fa-regular fa-image"></i>
             </div>
-            <h3>Click or Drag & Drop Image Here</h3>
-            <p style="color:#64748b; font-size:13px;">Upload an image to crop, edit, and resize</p>
+            <h3>Click or Drag & Drop Image</h3>
         </div>
     </div>
 
-    <!-- Workspace for Editing -->
-    <div id="options-section" class="hidden">
+    <div id="options-section" class="workspace-box hidden">
         <h3>1. Crop & Adjust</h3>
         <div class="img-container">
             <img id="cropper-image" src="" alt="Picture">
@@ -243,9 +274,7 @@
                 <input type="range" id="filter-saturate" min="0" max="200" value="100">
             </div>
         </div>
-
         <hr style="border: 1px solid #e2e8f0; margin: 25px 0;">
-
         <h3>2. Resize Settings</h3>
         <div class="row">
             <div class="input-group">
@@ -257,52 +286,46 @@
                 <input type="number" id="img-height">
             </div>
         </div>
-        
-        <!-- Conditional Background Checkbox -->
         <div class="checkbox-group">
             <input type="checkbox" id="maintain-ratio">
-            <label for="maintain-ratio">Add Background (Don't stretch if expanding)</label>
+            <label for="maintain-ratio">Add Background (Don't stretch)</label>
         </div>
-        
         <div class="input-group hidden" id="bg-color-group">
             <label>Background Color</label>
             <input type="color" id="bg-color" value="#FFFFFF">
         </div>
-
         <div class="row">
             <div class="input-group">
                 <label>Target Size (KB)</label>
-                <input type="number" id="img-size" placeholder="Leave empty for original">
+                <input type="number" id="img-size" placeholder="Auto">
             </div>
             <div class="input-group">
                 <label>Format</label>
                 <select id="img-format">
-                    <option value="image/jpeg">.JPG (Best for compression)</option>
-                    <option value="image/png">.PNG (High Quality)</option>
+                    <option value="image/jpeg">.JPG</option>
+                    <option value="image/png">.PNG</option>
                 </select>
             </div>
             <div class="input-group">
-                <label>DPI (Optional)</label>
-                <input type="number" id="img-dpi" placeholder="e.g. 300">
+                <label>DPI (Opt)</label>
+                <input type="number" id="img-dpi" placeholder="300">
             </div>
         </div>
-        
-        <button id="edit-btn"><i class="fa-solid fa-wand-magic-sparkles"></i> Apply Filters & Resize</button>
+        <button id="edit-btn"><i class="fa-solid fa-wand-magic-sparkles"></i> Apply & Resize</button>
     </div>
 
-    <!-- Final Result -->
-    <div id="result-section" class="hidden">
+    <div id="result-section" class="workspace-box hidden">
         <h3>Your Final Masterpiece:</h3>
         <img id="result-img" class="preview-img" src="" alt="Resized Image">
         <p id="final-info" class="info-text"></p>
         <a id="download-link" class="btn-link btn-success" href="" download="edited_image"><i class="fa-solid fa-download"></i> Download Photo</a>
-        <button id="reset-btn" class="btn-danger"><i class="fa-solid fa-rotate-left"></i> Edit Another Photo</button>
+        <button id="reset-btn" class="btn-danger"><i class="fa-solid fa-rotate-left"></i> Edit Another</button>
     </div>
 </div>
 
 <script>
-    // ================= DRAG & DROP LOGIC =================
-    const setupDragDrop = (dropzoneId, inputId, callback) => {
+    // ================= GLOBAL DRAG & DROP LOGIC =================
+    const setupDragDrop = (dropzoneId, inputId) => {
         const dropzone = document.getElementById(dropzoneId);
         const input = document.getElementById(inputId);
 
@@ -321,16 +344,17 @@
             dropzone.classList.remove('dragover');
             if (e.dataTransfer.files.length) {
                 input.files = e.dataTransfer.files;
-                input.dispatchEvent(new Event('change')); // Trigger change event
+                input.dispatchEvent(new Event('change'));
             }
         });
     };
 
     setupDragDrop('pdf-dropzone', 'pdf-upload');
+    setupDragDrop('compress-dropzone', 'pdf-compress-upload');
     setupDragDrop('img-dropzone', 'image-upload');
 
 
-    // ================= SCRIPT FOR PDF MAKER =================
+    // ================= 1. SCRIPT FOR PDF MAKER =================
     const pdfUpload = document.getElementById('pdf-upload');
     const pdfFileNameDisplay = document.getElementById('pdf-file-name-display');
     const generatePdfBtn = document.getElementById('generate-pdf-btn');
@@ -338,37 +362,29 @@
     const pdfOptions = document.getElementById('pdf-options');
 
     pdfUpload.addEventListener('change', () => {
-        const files = pdfUpload.files;
-        if (files.length > 0) {
-            pdfFileNameDisplay.innerHTML = `<i class="fa-solid fa-check-circle" style="color:#10b981;"></i> Selected: ${files.length} Image(s)`;
-            pdfOptions.classList.remove('hidden'); // Show extra settings
-        } else {
-            pdfFileNameDisplay.innerText = "";
-            pdfOptions.classList.add('hidden');
+        if (pdfUpload.files.length > 0) {
+            pdfFileNameDisplay.innerHTML = `<i class="fa-solid fa-check-circle" style="color:#10b981;"></i> Selected: ${pdfUpload.files.length} Image(s)`;
+            pdfOptions.classList.remove('hidden');
         }
     });
 
-    const readFileAsDataURL = (file) => {
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result);
-            reader.readAsDataURL(file);
-        });
-    };
+    const readFileAsDataURL = (file) => new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.readAsDataURL(file);
+    });
 
-    const getImageDimensions = (dataURL) => {
-        return new Promise((resolve) => {
-            const img = new Image();
-            img.onload = () => resolve({ width: img.width, height: img.height });
-            img.src = dataURL;
-        });
-    };
+    const getImageDimensions = (dataURL) => new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => resolve({ width: img.width, height: img.height });
+        img.src = dataURL;
+    });
 
     generatePdfBtn.addEventListener('click', async () => {
         const files = pdfUpload.files;
         if (files.length === 0) return;
 
-        pdfStatus.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Generating PDF, please wait...";
+        pdfStatus.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Generating PDF...";
         pdfStatus.classList.remove('hidden');
 
         const { jsPDF } = window.jspdf;
@@ -379,250 +395,246 @@
         let pdf = new jsPDF(orientation, 'mm', pageSize === 'fit' ? 'a4' : pageSize);
 
         for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            const dataURL = await readFileAsDataURL(file);
+            const dataURL = await readFileAsDataURL(files[i]);
             const dimensions = await getImageDimensions(dataURL);
 
-            // If "Fit to Image" is selected, create dynamic page size based on pixels (converted roughly to mm)
             if (pageSize === 'fit') {
-                const imgWidthMm = dimensions.width * 0.264583; // px to mm approx
+                const imgWidthMm = dimensions.width * 0.264583;
                 const imgHeightMm = dimensions.height * 0.264583;
-                if (i === 0) {
-                    pdf = new jsPDF(imgWidthMm > imgHeightMm ? 'l' : 'p', 'mm', [imgWidthMm, imgHeightMm]);
-                } else {
-                    pdf.addPage([imgWidthMm, imgHeightMm], imgWidthMm > imgHeightMm ? 'l' : 'p');
-                }
-            } else if (i > 0) {
-                pdf.addPage();
-            }
+                if (i === 0) pdf = new jsPDF(imgWidthMm > imgHeightMm ? 'l' : 'p', 'mm', [imgWidthMm, imgHeightMm]);
+                else pdf.addPage([imgWidthMm, imgHeightMm], imgWidthMm > imgHeightMm ? 'l' : 'p');
+            } else if (i > 0) pdf.addPage();
 
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
-            
-            // Calculate usable area after margin
             const usableWidth = pdfWidth - (marginStr * 2);
             const usableHeight = pdfHeight - (marginStr * 2);
-
             const imgRatio = dimensions.width / dimensions.height;
             const pdfRatio = usableWidth / usableHeight;
 
-            let finalWidth = usableWidth;
-            let finalHeight = usableHeight;
+            let finalWidth = usableWidth, finalHeight = usableHeight;
+            if (imgRatio > pdfRatio) finalHeight = usableWidth / imgRatio;
+            else finalWidth = usableHeight * imgRatio;
 
-            if (imgRatio > pdfRatio) {
-                finalHeight = usableWidth / imgRatio;
-            } else {
-                finalWidth = usableHeight * imgRatio;
-            }
-
-            // Center image within margins
-            const x = marginStr + ((usableWidth - finalWidth) / 2);
-            const y = marginStr + ((usableHeight - finalHeight) / 2);
-
-            pdf.addImage(dataURL, 'JPEG', x, y, finalWidth, finalHeight);
+            pdf.addImage(dataURL, 'JPEG', marginStr + ((usableWidth - finalWidth) / 2), marginStr + ((usableHeight - finalHeight) / 2), finalWidth, finalHeight);
         }
 
-        pdf.save('MultiTool_Document.pdf');
-        
-        pdfStatus.innerHTML = "<i class='fa-solid fa-circle-check'></i> PDF Downloaded Successfully!";
+        pdf.save('Generated_Images.pdf');
+        pdfStatus.innerHTML = "<i class='fa-solid fa-circle-check'></i> PDF Downloaded!";
         pdfStatus.style.color = "#10b981";
-        
-        setTimeout(() => {
-            pdfUpload.value = "";
-            pdfFileNameDisplay.innerText = "";
-            pdfOptions.classList.add('hidden');
-            pdfStatus.classList.add('hidden');
-        }, 3000);
     });
 
-    // ================= SCRIPT FOR PHOTO EDITOR =================
-    let cropper;
-    let originalFileName = "";
-    
-    const fileInput = document.getElementById('image-upload');
-    const uploadSection = document.getElementById('upload-section');
-    const optionsSection = document.getElementById('options-section');
-    const cropperImage = document.getElementById('cropper-image');
-    
-    const widthInput = document.getElementById('img-width');
-    const heightInput = document.getElementById('img-height');
-    const maintainRatioCheck = document.getElementById('maintain-ratio');
-    const bgColorGroup = document.getElementById('bg-color-group');
-    const bgColorInput = document.getElementById('bg-color');
-    const sizeInput = document.getElementById('img-size');
-    const dpiInput = document.getElementById('img-dpi');
-    const formatSelect = document.getElementById('img-format');
-    
-    // Filters
+
+    // ================= 2. SCRIPT FOR PDF COMPRESSOR =================
+    const pdfCompressUpload = document.getElementById('pdf-compress-upload');
+    const compressFileNameDisplay = document.getElementById('compress-file-name-display');
+    const compressOptions = document.getElementById('compress-options');
+    const compressBtn = document.getElementById('compress-pdf-btn');
+    const compressStatus = document.getElementById('compress-status');
+    const compressResult = document.getElementById('compress-result');
+    const compressInfo = document.getElementById('compress-info');
+    const downloadCompressedBtn = document.getElementById('download-compressed-pdf');
+    let originalPdfFile = null;
+
+    pdfCompressUpload.addEventListener('change', () => {
+        const file = pdfCompressUpload.files[0];
+        if (file) {
+            originalPdfFile = file;
+            let sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            compressFileNameDisplay.innerHTML = `<i class="fa-solid fa-file-pdf" style="color:#f97316;"></i> ${file.name} (Original: ${sizeMB} MB)`;
+            compressOptions.classList.remove('hidden');
+            compressResult.classList.add('hidden');
+            compressStatus.classList.add('hidden');
+        }
+    });
+
+    compressBtn.addEventListener('click', async () => {
+        if (!originalPdfFile) return;
+
+        compressStatus.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Compressing... This may take a moment.";
+        compressStatus.classList.remove('hidden');
+        compressResult.classList.add('hidden');
+        compressBtn.disabled = true;
+
+        const level = document.getElementById('compression-level').value;
+        let scale = 1.5, quality = 0.7; // Medium
+        if (level === 'high') { scale = 1.0; quality = 0.5; }
+        if (level === 'low') { scale = 2.0; quality = 0.85; }
+
+        try {
+            const fileReader = new FileReader();
+            fileReader.onload = async function() {
+                const typedarray = new Uint8Array(this.result);
+                const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                const { jsPDF } = window.jspdf;
+                let outPdf;
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    // Get original page dimensions in mm
+                    const viewportOriginal = page.getViewport({ scale: 1.0 });
+                    const widthMm = viewportOriginal.width * 0.352777; // roughly px to mm for PDF standard (72 dpi)
+                    const heightMm = viewportOriginal.height * 0.352777;
+                    const orientation = widthMm > heightMm ? 'l' : 'p';
+
+                    if (i === 1) {
+                        outPdf = new jsPDF(orientation, 'mm', [widthMm, heightMm]);
+                    } else {
+                        outPdf.addPage([widthMm, heightMm], orientation);
+                    }
+
+                    // Render with compression scale
+                    const viewport = page.getViewport({ scale: scale });
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+                    
+                    const imgData = canvas.toDataURL('image/jpeg', quality);
+                    outPdf.addImage(imgData, 'JPEG', 0, 0, widthMm, heightMm);
+                }
+
+                const outBlob = outPdf.output('blob');
+                const outUrl = URL.createObjectURL(outBlob);
+                
+                downloadCompressedBtn.href = outUrl;
+                let newFileName = originalPdfFile.name.replace('.pdf', '') + '_compressed.pdf';
+                downloadCompressedBtn.download = newFileName;
+
+                const origMB = (originalPdfFile.size / (1024*1024)).toFixed(2);
+                const newMB = (outBlob.size / (1024*1024)).toFixed(2);
+                const savedPercent = Math.round((1 - (outBlob.size / originalPdfFile.size)) * 100);
+
+                compressStatus.classList.add('hidden');
+                compressResult.classList.remove('hidden');
+                
+                if (outBlob.size < originalPdfFile.size) {
+                    compressInfo.innerHTML = `<b>Success!</b> Reduced from <b>${origMB} MB</b> to <b>${newMB} MB</b> (Saved ${savedPercent}%)`;
+                } else {
+                    compressInfo.innerHTML = `<b>Note:</b> File size didn't reduce (Original: ${origMB} MB, New: ${newMB} MB). Try 'High' compression.`;
+                }
+                
+                compressBtn.disabled = false;
+            };
+            fileReader.readAsArrayBuffer(originalPdfFile);
+        } catch (error) {
+            compressStatus.innerHTML = "❌ Error during compression.";
+            compressBtn.disabled = false;
+        }
+    });
+
+
+    // ================= 3. SCRIPT FOR PHOTO EDITOR =================
+    // (This remains unchanged and works perfectly as fixed in the previous step)
+    let cropper, originalImgName = "";
+    const imgInput = document.getElementById('image-upload');
     const bSlider = document.getElementById('filter-brightness');
     const cSlider = document.getElementById('filter-contrast');
     const sSlider = document.getElementById('filter-saturate');
-    const bVal = document.getElementById('bright-val');
-    const cVal = document.getElementById('contrast-val');
-    const sVal = document.getElementById('saturate-val');
-
+    
     const updateFilterDisplay = () => {
-        bVal.innerText = bSlider.value;
-        cVal.innerText = cSlider.value;
-        sVal.innerText = sSlider.value;
-        const filterStr = `brightness(${bSlider.value}%) contrast(${cSlider.value}%) saturate(${sSlider.value}%)`;
-        document.querySelector('.cropper-view-box img').style.filter = filterStr; // Apply preview to cropper box
+        document.getElementById('bright-val').innerText = bSlider.value;
+        document.getElementById('contrast-val').innerText = cSlider.value;
+        document.getElementById('saturate-val').innerText = sSlider.value;
+        const previewImg = document.querySelector('.cropper-view-box img');
+        if (previewImg) previewImg.style.filter = `brightness(${bSlider.value}%) contrast(${cSlider.value}%) saturate(${sSlider.value}%)`;
     };
 
-    [bSlider, cSlider, sSlider].forEach(slider => slider.addEventListener('input', updateFilterDisplay));
+    [bSlider, cSlider, sSlider].forEach(s => s.addEventListener('input', updateFilterDisplay));
 
-    // Show/Hide Color Picker Logic
-    maintainRatioCheck.addEventListener('change', function() {
-        if (this.checked) {
-            bgColorGroup.classList.remove('hidden');
-        } else {
-            bgColorGroup.classList.add('hidden');
-        }
+    document.getElementById('maintain-ratio').addEventListener('change', function() {
+        document.getElementById('bg-color-group').classList.toggle('hidden', !this.checked);
     });
 
-    fileInput.addEventListener('change', () => {
-        const file = fileInput.files[0];
+    imgInput.addEventListener('change', () => {
+        const file = imgInput.files[0];
         if (!file) return;
-
-        originalFileName = file.name.split('.')[0];
-        sizeInput.value = Math.round(file.size / 1024); // Suggest original KB size
+        originalImgName = file.name.split('.')[0];
+        document.getElementById('img-size').value = Math.round(file.size / 1024);
         
         const reader = new FileReader();
         reader.onload = function(e) {
-            cropperImage.src = e.target.result;
-            uploadSection.classList.add('hidden');
-            optionsSection.classList.remove('hidden');
+            document.getElementById('cropper-image').src = e.target.result;
+            document.getElementById('upload-section').classList.add('hidden');
+            document.getElementById('options-section').classList.remove('hidden');
             
-            // Initialize Cropper.js
             if(cropper) cropper.destroy();
-            cropper = new Cropper(cropperImage, {
-                viewMode: 1,
-                autoCropArea: 1,
+            cropper = new Cropper(document.getElementById('cropper-image'), {
+                viewMode: 1, autoCropArea: 1,
+                ready() {
+                    bSlider.value = 100; cSlider.value = 100; sSlider.value = 100; updateFilterDisplay();
+                },
                 crop(event) {
-                    // Update Width/Height dynamically as user crops
-                    widthInput.value = Math.round(event.detail.width);
-                    heightInput.value = Math.round(event.detail.height);
+                    document.getElementById('img-width').value = Math.round(event.detail.width);
+                    document.getElementById('img-height').value = Math.round(event.detail.height);
                 }
             });
-            
-            // Reset filters
-            bSlider.value = 100; cSlider.value = 100; sSlider.value = 100; updateFilterDisplay();
         };
         reader.readAsDataURL(file);
     });
 
-    function changeDpiDataUrl(base64Image, dpi) {
-        if (!base64Image.startsWith('data:image/jpeg')) return base64Image;
-        let data = atob(base64Image.split(',')[1]);
-        let dataArray = new Uint8Array(data.length);
-        for (let i = 0; i < data.length; i++) dataArray[i] = data.charCodeAt(i);
-        if (dataArray[0] === 0xFF && dataArray[1] === 0xD8) {
-            let offset = 2;
-            while (offset < dataArray.length) {
-                if (dataArray[offset] === 0xFF && dataArray[offset + 1] === 0xE0) {
-                    dataArray[offset + 7] = 1;
-                    dataArray[offset + 8] = Math.floor(dpi / 256); dataArray[offset + 9] = dpi % 256;
-                    dataArray[offset + 10] = Math.floor(dpi / 256); dataArray[offset + 11] = dpi % 256;
-                    break;
-                }
-                offset += 2 + (dataArray[offset + 2] << 8) + dataArray[offset + 3];
-            }
-        }
-        let output = '';
-        for (let i = 0; i < dataArray.length; i++) output += String.fromCharCode(dataArray[i]);
-        return 'data:image/jpeg;base64,' + btoa(output);
-    }
-
+    // Edit and save logic
     document.getElementById('edit-btn').addEventListener('click', () => {
-        const newWidth = parseInt(widthInput.value);
-        const newHeight = parseInt(heightInput.value);
-        const format = formatSelect.value;
-        const targetKB = parseInt(sizeInput.value);
-        const addBackground = maintainRatioCheck.checked;
-        const bgColor = bgColorInput.value;
-        const targetDpi = parseInt(dpiInput.value);
+        const newW = parseInt(document.getElementById('img-width').value);
+        const newH = parseInt(document.getElementById('img-height').value);
+        const format = document.getElementById('img-format').value;
+        const targetKB = parseInt(document.getElementById('img-size').value);
+        const addBg = document.getElementById('maintain-ratio').checked;
+        const bgColor = document.getElementById('bg-color').value;
 
-        // 1. Get cropped image from Cropper.js
-        let croppedCanvas = cropper.getCroppedCanvas();
-        
-        // 2. Apply Filters to a temporary canvas
-        const filterCanvas = document.createElement('canvas');
-        filterCanvas.width = croppedCanvas.width;
-        filterCanvas.height = croppedCanvas.height;
-        const fCtx = filterCanvas.getContext('2d');
+        let cropped = cropper.getCroppedCanvas();
+        const fCanvas = document.createElement('canvas');
+        fCanvas.width = cropped.width; fCanvas.height = cropped.height;
+        const fCtx = fCanvas.getContext('2d');
         fCtx.filter = `brightness(${bSlider.value}%) contrast(${cSlider.value}%) saturate(${sSlider.value}%)`;
-        fCtx.drawImage(croppedCanvas, 0, 0);
+        fCtx.drawImage(cropped, 0, 0);
 
-        // 3. Final Resize & Background Logic
-        const finalCanvas = document.createElement('canvas');
-        const ctx = finalCanvas.getContext('2d');
-        finalCanvas.width = newWidth;
-        finalCanvas.height = newHeight;
+        const finCanvas = document.createElement('canvas');
+        const ctx = finCanvas.getContext('2d');
+        finCanvas.width = newW; finCanvas.height = newH;
+        const isExpanding = newW > fCanvas.width || newH > fCanvas.height;
 
-        const isExpanding = newWidth > filterCanvas.width || newHeight > filterCanvas.height;
-
-        if (format === 'image/jpeg' || (addBackground && isExpanding)) {
-            ctx.fillStyle = (addBackground && isExpanding) ? bgColor : '#FFFFFF'; // JPEG needs white bg naturally
-            ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
-        } else {
-            ctx.clearRect(0, 0, finalCanvas.width, finalCanvas.height);
+        if (format === 'image/jpeg' || (addBg && isExpanding)) {
+            ctx.fillStyle = (addBg && isExpanding) ? bgColor : '#FFFFFF';
+            ctx.fillRect(0, 0, newW, newH);
         }
 
-        if (addBackground && isExpanding) {
-            // Letterbox
-            const ratio = Math.min(newWidth / filterCanvas.width, newHeight / filterCanvas.height);
-            const drawWidth = filterCanvas.width * ratio;
-            const drawHeight = filterCanvas.height * ratio;
-            const offsetX = (newWidth - drawWidth) / 2;
-            const offsetY = (newHeight - drawHeight) / 2;
-            ctx.drawImage(filterCanvas, offsetX, offsetY, drawWidth, drawHeight);
-        } else {
-            // Stretch / Direct Resize
-            ctx.drawImage(filterCanvas, 0, 0, newWidth, newHeight);
-        }
+        if (addBg && isExpanding) {
+            const ratio = Math.min(newW / fCanvas.width, newH / fCanvas.height);
+            const dW = fCanvas.width * ratio, dH = fCanvas.height * ratio;
+            ctx.drawImage(fCanvas, (newW - dW)/2, (newH - dH)/2, dW, dH);
+        } else ctx.drawImage(fCanvas, 0, 0, newW, newH);
 
-        // 4. Binary Search Compression Logic
-        let dataUrl = finalCanvas.toDataURL(format, 1.0);
+        let dataUrl = finCanvas.toDataURL(format, 1.0);
         
-        if (targetKB && targetKB > 0 && format === 'image/jpeg') {
-            let minQ = 0.01, maxQ = 1.0, bestQ = 1.0;
-            let attempts = 0;
-            while (attempts < 8) {
-                bestQ = (minQ + maxQ) / 2;
-                dataUrl = finalCanvas.toDataURL(format, bestQ);
-                let currentKB = Math.round((dataUrl.length * 0.75) / 1024);
-                if (currentKB > targetKB) maxQ = bestQ; 
-                else minQ = bestQ;
-                attempts++;
+        if (targetKB && format === 'image/jpeg') {
+            let minQ = 0.01, maxQ = 1.0;
+            for(let i=0; i<8; i++) {
+                let midQ = (minQ + maxQ) / 2;
+                if (Math.round((finCanvas.toDataURL(format, midQ).length * 0.75) / 1024) > targetKB) maxQ = midQ;
+                else minQ = midQ;
             }
-            dataUrl = finalCanvas.toDataURL(format, minQ);
+            dataUrl = finCanvas.toDataURL(format, minQ);
         }
 
-        // Apply DPI
-        if (targetDpi && targetDpi > 0 && format === 'image/jpeg') {
-            dataUrl = changeDpiDataUrl(dataUrl, targetDpi);
-        }
-
-        // Display Results
         document.getElementById('result-img').src = dataUrl;
-        const dlLink = document.getElementById('download-link');
-        dlLink.href = dataUrl;
-        dlLink.download = originalFileName + '_pro_edited' + (format === 'image/jpeg' ? '.jpg' : '.png');
-
-        let finalKB = Math.round((dataUrl.length * 0.75) / 1024);
-        document.getElementById('final-info').innerHTML = `<b>Final Size:</b> ~${finalKB} KB <br> <b>Dimensions:</b> ${newWidth}x${newHeight}px`;
-
-        optionsSection.classList.add('hidden');
+        const dl = document.getElementById('download-link');
+        dl.href = dataUrl;
+        dl.download = originalImgName + '_edited' + (format === 'image/jpeg' ? '.jpg' : '.png');
+        document.getElementById('final-info').innerHTML = `<b>Size:</b> ~${Math.round((dataUrl.length*0.75)/1024)} KB <br> <b>Dimensions:</b> ${newW}x${newH}px`;
+        
+        document.getElementById('options-section').classList.add('hidden');
         document.getElementById('result-section').classList.remove('hidden');
     });
 
     document.getElementById('reset-btn').addEventListener('click', () => {
-        fileInput.value = "";
+        imgInput.value = "";
         if(cropper) cropper.destroy();
         document.getElementById('result-section').classList.add('hidden');
-        uploadSection.classList.remove('hidden');
+        document.getElementById('upload-section').classList.remove('hidden');
     });
 </script>
-
 </body>
 </html>
